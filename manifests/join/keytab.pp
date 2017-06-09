@@ -32,11 +32,21 @@ class realmd::join::keytab {
     }
   }
 
-  exec { 'run_kinit_with_keytab':
-    path        => '/usr/bin:/usr/sbin:/bin',
-    command     => "kinit -kt ${_krb_keytab} ${_domain_join_user}",
-    refreshonly => true,
-    before      => Exec['realm_join_with_keytab'],
+  if $_krb_keytab != undef {
+    exec { 'run_kinit_with_keytab':
+      path        => '/usr/bin:/usr/sbin:/bin',
+      command     => "kinit -kt ${_krb_keytab} ${_domain_join_user}",
+      refreshonly => true,
+      before      => Exec['realm_join_with_keytab'],
+    }
+  } else {
+    exec { 'run_kinit_with_keytab':
+      path        => '/usr/bin:/usr/sbin:/bin',
+      command     => "kinit ${_domain_join_user}@${_domain}",
+      refreshonly => true,
+      before      => Exec['realm_join_with_keytab'],
+    }
+
   }
 
   exec { 'realm_join_with_keytab':
