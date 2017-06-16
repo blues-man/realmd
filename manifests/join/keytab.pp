@@ -48,7 +48,7 @@ class realmd::join::keytab {
     exec { 'run_kinit_with_keytab':
       path        => '/usr/bin:/usr/sbin:/bin',
       command     => "echo '${_domain_join_password}' | kinit ${_domain_join_user}@${_domain}",
-      refreshonly => true,
+      unless  => "klist -k /etc/krb5.keytab | grep -i $(hostname -s)@${_domain}",
       before      => Exec['realm_join_with_keytab'],
     }
 
@@ -57,19 +57,16 @@ class realmd::join::keytab {
   exec { 'realm_join_with_keytab':
     path    => '/usr/bin:/usr/sbin:/bin',
     command => "realm join ${_domain}",
-    unless  => "klist -k /etc/krb5.keytab | grep -i $(hostname -s)@${_domain}'",
+    unless  => "klist -k /etc/krb5.keytab | grep -i $(hostname -s)@${_domain}",
     require => Exec['run_kinit_with_keytab'],
   }
 
   if $_permit_groups != undef {
-    $groups = join($_permit_groups, ",")
 
-    exec { 'realm_permit_group':
-      path    => '/usr/bin:/usr/sbin:/bin',
-      command => "realm permit -g ${groups}",
-      unless  => "realm list | grep -i ${groups}",
-      require => Exec['run_join_with_keytab'],
+    realmd::join::permit { $_permit_groups:
+      require => Exec['realm_join_with_keytab'],
     }
+
   }
 
 }
