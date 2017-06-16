@@ -12,6 +12,7 @@ class realmd::join::keytab {
   $_krb_config_file       = $::realmd::krb_config_file
   $_krb_config            = $::realmd::krb_config
   $_manage_krb_config     = $::realmd::manage_krb_config
+  $_permit_groups         = $::realmd::permit_groups
 
 
 
@@ -58,6 +59,17 @@ class realmd::join::keytab {
     command => "realm join ${_domain}",
     unless  => "klist -k /etc/krb5.keytab | grep -i $(hostname -s)@${_domain}'",
     require => Exec['run_kinit_with_keytab'],
+  }
+
+  if $_permit_groups != undef {
+    $groups = join($_permit_groups, ",")
+
+    exec { 'realm_permit_group':
+      path    => '/usr/bin:/usr/sbin:/bin',
+      command => "realm permit -g ${groups}",
+      unless  => "realm list | grep -i ${groups}",
+      require => Exec['run_join_with_keytab'],
+    }
   }
 
 }

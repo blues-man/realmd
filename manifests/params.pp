@@ -79,6 +79,7 @@ class realmd::params {
         },
       }
       $manage_krb_config       = true
+      $permit_groups           = undef
     }
     default: {
       fail("${::operatingsystem} not supported")
